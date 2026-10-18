@@ -836,52 +836,66 @@
             });
         }
 
-        // ==========================================
+       // ==========================================
         // SISTEMA DE LEMBRETE E NOTIFICAÇÕES WEB
         // ==========================================
         const reminderTimeInput = document.getElementById('reminder-time');
         const btnSaveReminder = document.getElementById('btn-save-reminder');
+        const btnRemoveReminder = document.getElementById('btn-remove-reminder');
+        const reminderStatusMsg = document.getElementById('reminder-status-msg');
 
-        // Carrega o horário previamente salvo
-        const savedReminder = localStorage.getItem('mood_reminder_time');
-        if (savedReminder && reminderTimeInput && btnSaveReminder) {
-            reminderTimeInput.value = savedReminder;
-            btnSaveReminder.textContent = 'Ativado ✓';
-            btnSaveReminder.classList.replace('bg-zinc-100', 'bg-emerald-100');
-            btnSaveReminder.classList.replace('text-zinc-600', 'text-emerald-700');
-            btnSaveReminder.classList.replace('border-zinc-200', 'border-emerald-300');
+        function updateReminderUI() {
+            const savedReminder = localStorage.getItem('mood_reminder_time');
+            if (savedReminder) {
+                reminderStatusMsg.textContent = `Ativo às ${savedReminder}`;
+                reminderStatusMsg.classList.remove('hidden');
+                btnRemoveReminder.classList.remove('hidden');
+                reminderTimeInput.classList.add('hidden');
+                btnSaveReminder.classList.add('hidden');
+            } else {
+                reminderStatusMsg.classList.add('hidden');
+                btnRemoveReminder.classList.add('hidden');
+                reminderTimeInput.classList.add('hidden');
+                btnSaveReminder.classList.remove('hidden');
+                btnSaveReminder.textContent = 'LEMBRETE';
+                reminderTimeInput.value = '';
+            }
         }
 
-        if (btnSaveReminder) {
+        if (btnSaveReminder && reminderTimeInput) {
+            updateReminderUI();
+
             btnSaveReminder.addEventListener('click', async () => {
-                // Desativar lembrete se o campo de tempo for limpo
-                if (!reminderTimeInput.value) {
-                    localStorage.removeItem('mood_reminder_time');
-                    btnSaveReminder.textContent = 'Ativar';
-                    btnSaveReminder.classList.replace('bg-emerald-100', 'bg-zinc-100');
-                    btnSaveReminder.classList.replace('text-emerald-700', 'text-zinc-600');
-                    btnSaveReminder.classList.replace('border-emerald-300', 'border-zinc-200');
-                    showToast("Lembrete desativado.", "warning");
+                // Se o input de hora estiver oculto, revela-o para o utilizador escolher a hora
+                if (reminderTimeInput.classList.contains('hidden')) {
+                    reminderTimeInput.classList.remove('hidden');
+                    btnSaveReminder.textContent = 'Guardar';
                     return;
                 }
 
-                // Pedir permissão ao utilizador e ao sistema operativo
-                if (Notification.permission !== "granted") {
-                    const permission = await Notification.requestPermission();
-                    if (permission !== "granted") {
-                        return showToast("Precisas de permitir as notificações no navegador.", "error");
+                // Se já escolheu a hora e clicou em Guardar
+                if (reminderTimeInput.value) {
+                    if (Notification.permission !== "granted") {
+                        const permission = await Notification.requestPermission();
+                        if (permission !== "granted") {
+                            return window.alert("Precisas de permitir as notificações no navegador.");
+                        }
                     }
+                    localStorage.setItem('mood_reminder_time', reminderTimeInput.value);
+                    updateReminderUI();
+                    window.alert("Lembrete configurado com sucesso!");
+                } else {
+                    window.alert("Por favor, selecione um horário válido.");
                 }
+            });
 
-                localStorage.setItem('mood_reminder_time', reminderTimeInput.value);
-                btnSaveReminder.textContent = 'Ativado ✓';
-                btnSaveReminder.classList.replace('bg-zinc-100', 'bg-emerald-100');
-                btnSaveReminder.classList.replace('text-zinc-600', 'text-emerald-700');
-                btnSaveReminder.classList.replace('border-zinc-200', 'border-emerald-300');
-                showToast("Lembrete configurado com sucesso!", "success");
+            btnRemoveReminder.addEventListener('click', () => {
+                localStorage.removeItem('mood_reminder_time');
+                updateReminderUI();
+                window.alert("Lembrete desativado.");
             });
         }
-
+        
         // Relógio local contínuo que dispara a notificação
         setInterval(() => {
             const reminderTime = localStorage.getItem('mood_reminder_time');
