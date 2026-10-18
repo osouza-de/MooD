@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MooD - Diário de Humor Seguro</title>
+    <title>MooD - Diário de Humor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
@@ -12,7 +12,7 @@
     <!-- TELA DE LOGIN -->
     <div id="login-screen" class="flex flex-col items-center justify-center min-h-screen bg-slate-100">
         <div class="bg-white p-8 rounded-xl shadow-lg text-center max-w-md w-full">
-            <h1 class="text-2xl font-bold text-indigo-600 mb-4">MooD - Diário de Humor</h1>
+            <h1 class="text-4xl font-bold text-indigo-600 mb-2 tracking-tight">MooD</h1>
             <p class="text-slate-500 mb-8">Acesse com sua conta Google para continuar.</p>
             <button id="btn-login" class="w-full flex items-center justify-center gap-3 bg-white border border-slate-300 text-slate-700 font-semibold py-3 px-4 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
                 <svg class="w-5 h-5" viewBox="0 0 24 24">
@@ -26,162 +26,202 @@
         </div>
     </div>
 
-    <!-- TELA PRINCIPAL DO APP (Oculta por padrão) -->
-    <div id="app-screen" class="hidden max-w-4xl mx-auto p-4 sm:p-6 pb-20">
-        <header class="flex justify-between items-center mb-8 border-b pb-4">
+    <!-- APP PRINCIPAL -->
+    <div id="app-screen" class="hidden max-w-5xl mx-auto p-4 sm:p-6 pb-20">
+        <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 border-b pb-4 gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-indigo-700">MooD - Diário de Humor</h1>
+                <h1 class="text-3xl font-bold text-indigo-700 tracking-tight">MooD</h1>
                 <p id="user-info" class="text-sm text-slate-500 mt-1">Conectado como...</p>
             </div>
-            <button id="btn-logout" class="text-sm font-semibold text-rose-500 hover:text-rose-700 px-3 py-1 border border-rose-200 rounded hover:bg-rose-50 transition-colors">
-                Sair
-            </button>
+            <div class="flex items-center gap-2">
+                <button id="btn-export" title="Exportar Backup Criptografado" class="p-1 text-slate-500 hover:text-indigo-600 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                </button>
+                <button id="btn-import-trigger" title="Importar Backup" class="p-1 text-slate-500 hover:text-indigo-600 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                </button>
+                <input type="file" id="file-import" class="hidden" accept=".json">
+                <div class="w-px h-6 bg-slate-300 mx-2"></div>
+                <button id="btn-logout" class="text-sm font-semibold text-rose-500 hover:text-rose-700 px-3 py-1 border border-rose-200 rounded hover:bg-rose-50 transition-colors">Sair</button>
+            </div>
         </header>
 
-        <!-- Senha Mestre (Apenas na interface, não salva) -->
-        <div class="bg-indigo-50 p-4 rounded-lg mb-8 border border-indigo-100 shadow-sm">
-            <label class="block text-sm font-semibold text-indigo-900 mb-2">Chave Mestre de Criptografia (Local)</label>
-            <div class="flex gap-2">
-                <input type="password" id="master-password" placeholder="Sua senha secreta" class="flex-1 p-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <button id="apply-key" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition font-medium">Aplicar</button>
+        <!-- Senha Mestre -->
+        <div class="bg-indigo-50 p-4 rounded-lg mb-8 border border-indigo-100 shadow-sm flex flex-col sm:flex-row gap-4 items-center">
+            <div class="flex-1 w-full">
+                <label class="block text-sm font-semibold text-indigo-900 mb-1">Chave Mestre (AES-256)</label>
+                <div class="flex gap-2">
+                    <input type="password" id="master-password" placeholder="Sua senha secreta" class="flex-1 p-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button id="apply-key" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition font-medium">Aplicar</button>
+                </div>
             </div>
-            <p class="text-xs text-indigo-600 mt-2">Nenhum dado é salvo no servidor sem ser criptografado com esta senha primeiro.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <!-- Formulário -->
+        <!-- ========================================== -->
+        <!-- DASHBOARD VIEW (Visível por padrão)          -->
+        <!-- ========================================== -->
+        <div id="dashboard-view" class="space-y-8">
+            <!-- Header do Dashboard com botão Registrar -->
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-slate-700">Visão Geral</h2>
+                <button id="btn-new-entry" class="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-indigo-700 transition shadow-md flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Registrar
+                </button>
+            </div>
+
+            <!-- Heatmap Estilo GitHub (Tamanho Maior) -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 id="form-title" class="text-xl font-bold text-slate-700 mb-6">Novo Registro</h2>
-                
-                <input type="hidden" id="entry-id">
-
-                <div class="space-y-5">
-                    <!-- Data -->
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Data</label>
-                        <input type="date" id="entry-date" class="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-
-                    <!-- Humor Basal -->
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Humor Predominante</label>
-                        <div class="flex gap-2">
-                            <label class="flex-1 text-center cursor-pointer">
-                                <input type="radio" name="mood" value="tristeza" class="peer sr-only">
-                                <div class="p-2 border rounded peer-checked:bg-blue-100 peer-checked:border-blue-500 peer-checked:text-blue-700 hover:bg-slate-50 transition">Tristeza</div>
-                            </label>
-                            <label class="flex-1 text-center cursor-pointer">
-                                <input type="radio" name="mood" value="neutro" class="peer sr-only" checked>
-                                <div class="p-2 border rounded peer-checked:bg-slate-200 peer-checked:border-slate-500 peer-checked:text-slate-700 hover:bg-slate-50 transition">Neutro</div>
-                            </label>
-                            <label class="flex-1 text-center cursor-pointer">
-                                <input type="radio" name="mood" value="alegria" class="peer sr-only">
-                                <div class="p-2 border rounded peer-checked:bg-green-100 peer-checked:border-green-500 peer-checked:text-green-700 hover:bg-slate-50 transition">Alegria</div>
-                            </label>
-                            <label class="flex-1 text-center cursor-pointer">
-                                <input type="radio" name="mood" value="euforia" class="peer sr-only">
-                                <div class="p-2 border rounded peer-checked:bg-orange-100 peer-checked:border-orange-500 peer-checked:text-orange-700 hover:bg-slate-50 transition">Euforia</div>
-                            </label>
-                            <label class="flex-1 text-center cursor-pointer">
-                                <input type="radio" name="mood" value="misto" class="peer sr-only">
-                                <div class="p-2 border rounded peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:text-purple-700 hover:bg-slate-50 transition">Misto</div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Intensidade e Energia -->
-                    <div class="flex gap-4">
-                        <div class="flex-1">
-                            <label class="block text-sm font-medium mb-1">Intensidade do Humor (1-10)</label>
-                            <input type="range" id="mood-intensity" min="1" max="10" value="5" class="w-full accent-indigo-600">
-                        </div>
-                        <div class="flex-1">
-                            <label class="block text-sm font-medium mb-1">Nível de Energia (1-10)</label>
-                            <input type="range" id="energy-level" min="1" max="10" value="5" class="w-full accent-amber-500">
-                        </div>
-                    </div>
-
-                    <!-- Sono -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Horário que Dormiu</label>
-                            <input type="time" id="sleep-time" class="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Horário que Acordou</label>
-                            <input type="time" id="wake-time" class="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none">
-                        </div>
-                    </div>
-
-                    <!-- Sintomas / Gatilhos (Checkboxes) -->
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Marcadores e Gatilhos</label>
-                        <div class="grid grid-cols-2 gap-2 text-sm mb-4">
-                            <label class="flex items-center gap-2"><input type="checkbox" value="Pensamentos Negativos" class="markers rounded text-indigo-600"> Pensamentos Negativos</label>
-                            <label class="flex items-center gap-2"><input type="checkbox" value="Pensamento Acelerado" class="markers rounded text-indigo-600"> Pensamento Acelerado</label>
-                            <label class="flex items-center gap-2"><input type="checkbox" value="Desentendimento/Briga" class="markers rounded text-indigo-600"> Desentendimento/Briga</label>
-                            <label class="flex items-center gap-2"><input type="checkbox" value="Choro" class="markers rounded text-indigo-600"> Choro</label>
-                            <label class="flex items-center gap-2"><input type="checkbox" value="Irritabilidade" class="markers rounded text-indigo-600"> Irritabilidade Intensa</label>
-                            <label class="flex items-center gap-2"><input type="checkbox" value="Impulsividade" class="markers rounded text-indigo-600"> Impulsividade (Compras/Ações)</label>
-                            <label class="flex items-center gap-2"><input type="checkbox" value="Medicacao OK" class="markers rounded text-green-600"> Tomou Medicação Correta</label>
-                            <label class="flex items-center gap-2"><input type="checkbox" value="Insônia" class="markers rounded text-rose-600"> Insônia / Despertares</label>
-                        </div>
-                        <label class="block text-sm font-medium mb-2 border-t pt-2">Hábitos e Consumos</label>
-                        <div class="grid grid-cols-2 gap-2 text-sm">
-                            <label class="flex items-center gap-2"><input type="checkbox" value="Fumou" class="markers rounded text-orange-600"> Fumou</label>
-                            <label class="flex items-center gap-2"><input type="checkbox" value="Álcool" class="markers rounded text-orange-600"> Consumiu Álcool</label>
-                            <label class="flex items-center gap-2"><input type="checkbox" value="Drogas" class="markers rounded text-rose-600"> Uso de Drogas</label>
-                        </div>
-                    </div>
-
-                    <!-- Notas Livres -->
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Observações Livres</label>
-                        <textarea id="free-notes" rows="4" class="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none resize-none" placeholder="Como foi o seu dia? Registre eventos importantes ou detalhes..."></textarea>
-                    </div>
-
-                    <div class="flex gap-2">
-                        <button id="btn-save" class="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">Salvar Registro Seguro</button>
-                        <button id="btn-cancel" class="hidden px-4 bg-slate-200 text-slate-700 py-3 rounded-lg font-semibold hover:bg-slate-300 transition">Cancelar</button>
-                    </div>
+            <h3 class="text-lg font-bold text-slate-700 mb-4">MooDMap (Últimos 365 dias)</h3>
+            <div id="heatmap" class="flex flex-wrap gap-1 md:gap-1.5">
+                    <!-- Quadrados gerados via JS -->
+                </div>
+                <div class="flex gap-3 text-sm mt-6 justify-end text-slate-500 items-center">
+                    <span>Triste</span>
+                    <div class="w-4 h-4 bg-blue-500 rounded"></div>
+                    <div class="w-4 h-4 bg-slate-300 rounded"></div>
+                    <div class="w-4 h-4 bg-green-500 rounded"></div>
+                    <div class="w-4 h-4 bg-orange-500 rounded"></div>
+                    <div class="w-4 h-4 bg-purple-500 rounded"></div>
+                    <span>Eufórico</span>
                 </div>
             </div>
 
-            <!-- Coluna da Direita: Mapa e Histórico -->
-            <div class="space-y-8">
-                <!-- Heatmap Estilo GitHub -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 class="text-xl font-bold text-slate-700 mb-4">Mapa de Humor Recente</h2>
-                    <div id="heatmap" class="flex flex-wrap gap-1">
-                        <!-- Quadrados gerados via JS -->
+            <!-- Lista de Histórico -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <h3 class="text-lg font-bold text-slate-700 whitespace-nowrap">Histórico</h3>
+                    <div class="w-full relative">
+                        <input type="text" id="search-input" placeholder="Buscar em notas, gatilhos, título..." class="w-full p-2 pl-8 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all hidden">
+                        <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5 hidden" id="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
-                    <div class="flex gap-3 text-xs mt-4 justify-end text-slate-500 items-center">
-                        <span>Triste/Deprimido</span>
-                        <div class="w-3 h-3 bg-blue-500 rounded-sm"></div>
-                        <div class="w-3 h-3 bg-slate-300 rounded-sm"></div>
-                        <div class="w-3 h-3 bg-green-500 rounded-sm"></div>
-                        <div class="w-3 h-3 bg-orange-500 rounded-sm"></div>
-                        <div class="w-3 h-3 bg-purple-500 rounded-sm"></div>
-                        <span>Eufórico/Misto</span>
+                    <button id="btn-show-all" class="hidden text-sm text-indigo-600 underline font-medium hover:text-indigo-800 whitespace-nowrap">Ver todos</button>
+                </div>
+                <div id="history-list" class="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                    <p class="text-slate-500 text-sm italic">Insira a chave mestre para carregar.</p>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ========================================== -->
+        <!-- FORM VIEW (Oculto por padrão)                -->
+        <!-- ========================================== -->
+        <div id="form-view" class="hidden bg-white p-6 sm:p-8 rounded-xl shadow-md border border-slate-200 relative">
+            
+            <button id="btn-close-form" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <h2 id="form-title" class="text-2xl font-bold text-slate-800 mb-8 border-b pb-4">Novo Registro</h2>
+            
+            <input type="hidden" id="entry-id">
+
+            <div class="space-y-6">
+                <!-- Data e Título -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Data</label>
+                        <input type="date" id="entry-date" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Identificador do Registro</label>
+                        <input type="text" id="entry-title" placeholder="Ex: Manhã, Crise de Ansiedade..." class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50">
                     </div>
                 </div>
 
-                <!-- Lista de Histórico -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 class="text-xl font-bold text-slate-700 mb-4">Histórico Descriptografado</h2>
-                    <div id="history-list" class="space-y-3 max-h-96 overflow-y-auto pr-2">
-                        <!-- Itens gerados via JS -->
-                        <p class="text-slate-500 text-sm italic">Insira a chave mestre para ver os registros.</p>
+                <!-- Humor Basal -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Humor Predominante</label>
+                    <div class="flex flex-wrap sm:flex-nowrap gap-2">
+                        <label class="flex-1 text-center cursor-pointer">
+                            <input type="radio" name="mood" value="tristeza" class="peer sr-only">
+                            <div class="p-3 border rounded-lg peer-checked:bg-blue-100 peer-checked:border-blue-500 peer-checked:text-blue-700 font-medium hover:bg-slate-50 transition">Tristeza</div>
+                        </label>
+                        <label class="flex-1 text-center cursor-pointer">
+                            <input type="radio" name="mood" value="neutro" class="peer sr-only" checked>
+                            <div class="p-3 border rounded-lg peer-checked:bg-slate-200 peer-checked:border-slate-500 peer-checked:text-slate-800 font-medium hover:bg-slate-50 transition">Neutro</div>
+                        </label>
+                        <label class="flex-1 text-center cursor-pointer">
+                            <input type="radio" name="mood" value="alegria" class="peer sr-only">
+                            <div class="p-3 border rounded-lg peer-checked:bg-green-100 peer-checked:border-green-500 peer-checked:text-green-700 font-medium hover:bg-slate-50 transition">Alegria</div>
+                        </label>
+                        <label class="flex-1 text-center cursor-pointer">
+                            <input type="radio" name="mood" value="euforia" class="peer sr-only">
+                            <div class="p-3 border rounded-lg peer-checked:bg-orange-100 peer-checked:border-orange-500 peer-checked:text-orange-700 font-medium hover:bg-slate-50 transition">Euforia</div>
+                        </label>
+                        <label class="flex-1 text-center cursor-pointer">
+                            <input type="radio" name="mood" value="misto" class="peer sr-only">
+                            <div class="p-3 border rounded-lg peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:text-purple-700 font-medium hover:bg-slate-50 transition">Misto</div>
+                        </label>
                     </div>
+                </div>
+
+                <!-- Intensidade e Energia -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Intensidade do Humor (1-10)</label>
+                        <input type="range" id="mood-intensity" min="1" max="10" value="5" class="w-full accent-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Nível de Energia (1-10)</label>
+                        <input type="range" id="energy-level" min="1" max="10" value="5" class="w-full accent-amber-500">
+                    </div>
+                </div>
+
+                <!-- Sono -->
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Hora que Dormiu</label>
+                        <input type="time" id="sleep-time" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Hora que Acordou</label>
+                        <input type="time" id="wake-time" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50">
+                    </div>
+                </div>
+
+                <!-- Marcadores -->
+                <div class="pt-4 border-t">
+                    <label class="block text-base font-bold text-slate-700 mb-3">Marcadores e Gatilhos</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-6">
+                        <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-50"><input type="checkbox" value="Pensamentos Negativos" class="markers w-4 h-4 rounded text-indigo-600"> Pens. Negativos</label>
+                        <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-50"><input type="checkbox" value="Pensamento Acelerado" class="markers w-4 h-4 rounded text-indigo-600"> Pens. Acelerado</label>
+                        <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-50"><input type="checkbox" value="Desentendimento/Briga" class="markers w-4 h-4 rounded text-indigo-600"> Briga/Atrito</label>
+                        <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-50"><input type="checkbox" value="Choro" class="markers w-4 h-4 rounded text-indigo-600"> Choro</label>
+                        <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-50"><input type="checkbox" value="Irritabilidade" class="markers w-4 h-4 rounded text-indigo-600"> Irritabilidade</label>
+                        <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-50"><input type="checkbox" value="Impulsividade" class="markers w-4 h-4 rounded text-indigo-600"> Impulsividade</label>
+                        <label class="flex items-center gap-2 p-2 rounded hover:bg-green-50"><input type="checkbox" value="Medicacao OK" class="markers w-4 h-4 rounded text-green-600"> Medicação OK</label>
+                        <label class="flex items-center gap-2 p-2 rounded hover:bg-rose-50"><input type="checkbox" value="Insônia" class="markers w-4 h-4 rounded text-rose-600"> Insônia</label>
+                    </div>
+
+                    <label class="block text-base font-bold text-slate-700 mb-3 border-t pt-4">Hábitos e Consumos</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                        <label class="flex items-center gap-2 p-2 rounded hover:bg-orange-50"><input type="checkbox" value="Fumou" class="markers w-4 h-4 rounded text-orange-600"> Fumou</label>
+                        <label class="flex items-center gap-2 p-2 rounded hover:bg-orange-50"><input type="checkbox" value="Álcool" class="markers w-4 h-4 rounded text-orange-600"> Álcool</label>
+                        <label class="flex items-center gap-2 p-2 rounded hover:bg-rose-50"><input type="checkbox" value="Drogas" class="markers w-4 h-4 rounded text-rose-600"> Drogas Ilicitas</label>
+                    </div>
+                </div>
+
+                <!-- Notas Livres -->
+                <div class="pt-4 border-t">
+                    <label class="block text-base font-bold text-slate-700 mb-2">Observações</label>
+                    <textarea id="free-notes" rows="4" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none bg-slate-50" placeholder="Como foi o seu dia? Registre eventos importantes ou detalhes do seu humor..."></textarea>
+                </div>
+
+                <!-- Botões de Ação do Formulário -->
+                <div class="flex flex-col sm:flex-row gap-3 pt-6">
+                    <button id="btn-save" class="flex-1 bg-indigo-600 text-white py-3.5 rounded-lg font-bold text-lg hover:bg-indigo-700 transition shadow-md">Salvar Registro</button>
+                    <button id="btn-delete" class="hidden px-6 bg-rose-100 text-rose-700 py-3.5 rounded-lg font-bold hover:bg-rose-200 transition">Excluir</button>
+                    <button id="btn-cancel" class="px-6 bg-slate-200 text-slate-700 py-3.5 rounded-lg font-bold hover:bg-slate-300 transition">Cancelar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- SDKs do Firebase via Module -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDocs, query, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -202,219 +242,302 @@
 
         let encryptionKey = '';
         let currentUser = null;
-        let entriesData = []; // Cache local dos dados
+        let entriesData = []; 
 
-        // Elementos UI Autenticação
+        // VIEWS
         const loginScreen = document.getElementById('login-screen');
         const appScreen = document.getElementById('app-screen');
+        const dashboardView = document.getElementById('dashboard-view');
+        const formView = document.getElementById('form-view');
+
+        // BOTOES GERAIS
         const btnLogin = document.getElementById('btn-login');
         const btnLogout = document.getElementById('btn-logout');
-        const userInfoDisplay = document.getElementById('user-info');
-
-        // Elementos UI App
-        const dateInput = document.getElementById('entry-date');
-        const moodIntensity = document.getElementById('mood-intensity');
-        const energyLevel = document.getElementById('energy-level');
-        const sleepTime = document.getElementById('sleep-time');
-        const wakeTime = document.getElementById('wake-time');
-        const freeNotes = document.getElementById('free-notes');
-        const btnSave = document.getElementById('btn-save');
-        const btnCancel = document.getElementById('btn-cancel');
+        const btnNewEntry = document.getElementById('btn-new-entry');
         const btnApplyKey = document.getElementById('apply-key');
+        const btnExport = document.getElementById('btn-export');
+        const btnImportTrigger = document.getElementById('btn-import-trigger');
+        const fileImport = document.getElementById('file-import');
+        
+        // ELEMENTOS UI
+        const userInfoDisplay = document.getElementById('user-info');
         const passwordInput = document.getElementById('master-password');
         const historyList = document.getElementById('history-list');
         const heatmap = document.getElementById('heatmap');
+        const btnShowAll = document.getElementById('btn-show-all');
+        const searchInput = document.getElementById('search-input');
+        const searchIcon = document.getElementById('search-icon');
+
+        // FORM FIELDS E BOTÕES
         const formTitle = document.getElementById('form-title');
         const entryIdInput = document.getElementById('entry-id');
+        const dateInput = document.getElementById('entry-date');
+        const entryTitleInput = document.getElementById('entry-title');
+        const moodIntensity = document.getElementById('mood-intensity');
+        const energyLevel = document.getElementById('energy-level');
+        const sleepTime = document.getElementById('sleep-time'); // Mantido type="time" nativo
+        const wakeTime = document.getElementById('wake-time');   // Mantido type="time" nativo
+        const freeNotes = document.getElementById('free-notes');
+        const btnSave = document.getElementById('btn-save');
+        const btnDelete = document.getElementById('btn-delete');
+        const btnCancel = document.getElementById('btn-cancel');
+        const btnCloseForm = document.getElementById('btn-close-form');
 
-        // Seta data de hoje por padrão
         dateInput.valueAsDate = new Date();
 
-        // ---- AUTENTICAÇÃO ----
-        btnLogin.addEventListener('click', async () => {
-            try {
-                await signInWithPopup(auth, googleProvider);
-            } catch (error) {
-                console.error("Erro no login:", error);
-                alert("Falha ao fazer login com o Google.");
-            }
+        // ---- CONTROLE DE TELAS (VIEWS) ----
+        function showForm() {
+            dashboardView.classList.add('hidden');
+            formView.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function hideForm() {
+            formView.classList.add('hidden');
+            dashboardView.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        btnNewEntry.addEventListener('click', () => {
+            resetForm();
+            showForm();
         });
 
-        btnLogout.addEventListener('click', async () => {
-            await signOut(auth);
+        btnCancel.addEventListener('click', hideForm);
+        btnCloseForm.addEventListener('click', hideForm);
+
+        // ---- AUTH ----
+        btnLogin.addEventListener('click', async () => {
+            try { await signInWithPopup(auth, googleProvider); } 
+            catch (error) { alert("Falha no login."); }
         });
+
+        btnLogout.addEventListener('click', async () => await signOut(auth));
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Usuário logado
                 currentUser = user;
                 loginScreen.classList.add('hidden');
                 appScreen.classList.remove('hidden');
                 userInfoDisplay.textContent = `Conectado como ${user.email}`;
-                
-                // Se já tiver uma senha digitada, tenta carregar
                 if(encryptionKey) loadData();
             } else {
-                // Usuário deslogado
                 currentUser = null;
                 loginScreen.classList.remove('hidden');
                 appScreen.classList.add('hidden');
+                hideForm();
                 entriesData = [];
                 renderHeatmap();
                 historyList.innerHTML = '';
             }
         });
 
-        // ---- CRIPTOGRAFIA ----
+        // ---- CRYPTO ----
         btnApplyKey.addEventListener('click', () => {
-            if (passwordInput.value.length < 4) {
-                alert('Use uma senha mais forte.');
-                return;
-            }
+            if (passwordInput.value.length < 4) return alert('Senha muito fraca.');
             encryptionKey = passwordInput.value;
             btnApplyKey.textContent = 'Aplicada ✓';
             btnApplyKey.classList.replace('bg-indigo-600', 'bg-green-600');
-            if(currentUser) loadData(); // Recarrega dados com a chave
+            if(currentUser) loadData();
         });
 
-        function encryptData(dataStr) {
-            return CryptoJS.AES.encrypt(dataStr, encryptionKey).toString();
-        }
-
+        function encryptData(dataStr) { return CryptoJS.AES.encrypt(dataStr, encryptionKey).toString(); }
         function decryptData(cipherText) {
             try {
                 const bytes = CryptoJS.AES.decrypt(cipherText, encryptionKey);
                 const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
-                if (!decryptedStr) throw new Error("Senha Incorreta");
-                return JSON.parse(decryptedStr);
-            } catch (e) {
-                return null; // Falha na descriptografia
-            }
+                return decryptedStr ? JSON.parse(decryptedStr) : null;
+            } catch (e) { return null; }
         }
 
-        // ---- SALVAR / EDITAR REGISTRO ----
+        // ---- DB OPERATIONS ----
         btnSave.addEventListener('click', async () => {
-            if (!encryptionKey) {
-                alert("Por favor, defina a chave mestre de criptografia primeiro.");
-                return;
-            }
-
-            const date = dateInput.value;
-            if (!date) return alert("Selecione uma data.");
-
-            const mood = document.querySelector('input[name="mood"]:checked').value;
-            const markers = Array.from(document.querySelectorAll('.markers:checked')).map(cb => cb.value);
+            if (!encryptionKey) return alert("Defina a chave mestre primeiro.");
+            if (!dateInput.value) return alert("Selecione uma data.");
 
             const payload = {
-                date: date,
-                mood: mood,
+                date: dateInput.value,
+                title: entryTitleInput.value || 'Registro',
+                mood: document.querySelector('input[name="mood"]:checked').value,
                 intensity: moodIntensity.value,
                 energy: energyLevel.value,
                 sleepTime: sleepTime.value,
                 wakeTime: wakeTime.value,
-                markers: markers,
+                markers: Array.from(document.querySelectorAll('.markers:checked')).map(cb => cb.value),
                 notes: freeNotes.value,
-                // Mantém o timestamp da criação original se for edição
                 timestamp: entryIdInput.value ? entriesData.find(e => e.id === entryIdInput.value).timestamp : new Date().toISOString()
             };
 
-            const jsonStr = JSON.stringify(payload);
-            const encryptedStr = encryptData(jsonStr);
-
-            // CORREÇÃO CRÍTICA: Se for um registro novo, usa o timestamp exato como ID para nunca sobrescrever.
             const docId = entryIdInput.value ? entryIdInput.value : Date.now().toString();
 
             try {
-                const docRef = doc(db, `users/${currentUser.uid}/entries`, docId);
-                await setDoc(docRef, { payload: encryptedStr, dateObj: date });
-                
+                await setDoc(doc(db, `users/${currentUser.uid}/entries`, docId), { 
+                    payload: encryptData(JSON.stringify(payload)), 
+                    dateObj: payload.date 
+                });
                 resetForm();
+                hideForm();
                 loadData();
-            } catch (error) {
-                console.error("Erro ao salvar:", error);
-                alert('Erro ao sincronizar com o banco.');
+            } catch (error) { alert('Erro ao salvar no banco de dados.'); }
+        });
+
+        btnDelete.addEventListener('click', async () => {
+            const docId = entryIdInput.value;
+            if (!docId) return;
+
+            if (confirm("Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.")) {
+                try {
+                    await deleteDoc(doc(db, `users/${currentUser.uid}/entries`, docId));
+                    resetForm();
+                    hideForm();
+                    loadData();
+                } catch (error) {
+                    alert('Erro ao excluir registro.');
+                }
             }
         });
 
-        // ---- CARREGAR DADOS ----
         async function loadData() {
             if (!encryptionKey || !currentUser) return;
             historyList.innerHTML = '<p class="text-sm text-slate-500">Buscando e descriptografando...</p>';
+            
             try {
-                const entriesRef = collection(db, `users/${currentUser.uid}/entries`);
-                const q = query(entriesRef, orderBy("dateObj", "desc"));
+                const q = query(collection(db, `users/${currentUser.uid}/entries`), orderBy("dateObj", "desc"));
                 const querySnapshot = await getDocs(q);
                 
                 entriesData = [];
-                let html = '';
-
                 querySnapshot.forEach((docSnap) => {
-                    const data = docSnap.data();
-                    const decrypted = decryptData(data.payload);
+                    const decrypted = decryptData(docSnap.data().payload);
                     if (decrypted) {
                         decrypted.id = docSnap.id;
                         entriesData.push(decrypted);
                     }
                 });
 
-                // Ordena todos os registros de forma decrescente (mais recentes no topo) pelo milissegundo exato
                 entriesData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-                entriesData.forEach(entry => {
-                    html += generateHistoryHTML(entry);
-                });
-
-                if (entriesData.length === 0) {
-                    html = '<p class="text-sm text-slate-500">Nenhum registro legível encontrado.</p>';
-                }
-
-                historyList.innerHTML = html;
+                searchInput.classList.remove('hidden');
+                searchIcon.classList.remove('hidden');
+                renderHistoryList(entriesData);
                 renderHeatmap();
-                
-                document.querySelectorAll('.edit-entry').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const id = e.currentTarget.dataset.id;
-                        loadEntryIntoForm(id);
-                    });
-                });
             } catch (error) {
-                console.error("Erro ao ler:", error);
-                historyList.innerHTML = '<p class="text-sm text-rose-500">Erro ao carregar do banco.</p>';
+                historyList.innerHTML = '<p class="text-sm text-rose-500">Erro ao carregar dados.</p>';
             }
         }
 
-        // ---- EDIÇÃO DE REGISTRO ----
+        // ---- UI RENDERING ----
+        function renderHistoryList(dataList) {
+            if (dataList.length === 0) {
+                historyList.innerHTML = '<div class="p-8 text-center text-slate-500 bg-slate-50 rounded-lg border border-dashed border-slate-300">Nenhum registro encontrado.</div>';
+                return;
+            }
+            
+            let html = '';
+            dataList.forEach(entry => {
+                const colorClass = moodColors[entry.mood] || 'bg-slate-200';
+                const markersTags = (entry.markers || []).map(m => `<span class="bg-white/60 px-2.5 py-1 rounded-md text-xs font-medium text-slate-700">${m}</span>`).join('');
+                const [y, m, d] = entry.date.split('-');
+                const brDate = `${d}/${m}/${y}`;
+
+                html += `
+                    <div class="${colorClass} bg-opacity-20 p-5 rounded-xl border border-white/50 cursor-pointer hover:shadow-lg transition-all edit-entry" data-id="${entry.id}">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="font-bold text-lg text-slate-800">${brDate}</h4>
+                                <span class="text-sm text-slate-600 font-medium">${entry.title || 'Registro'}</span>
+                            </div>
+                            <span class="text-xs font-bold px-3 py-1.5 bg-white shadow-sm rounded-md uppercase tracking-wider">${entry.mood}</span>
+                        </div>
+                        <div class="flex flex-wrap gap-4 text-sm mb-3 text-slate-700 font-medium bg-white/40 inline-block p-2 rounded-lg">
+                            <span>Intensidade: ${entry.intensity}/10</span>
+                            <span>Energia: ${entry.energy}/10</span>
+                            ${entry.sleepTime && entry.wakeTime ? `<span>Sono: ${entry.sleepTime} às ${entry.wakeTime}</span>` : ''}
+                        </div>
+                        ${markersTags ? `<div class="flex flex-wrap gap-2 mb-3">${markersTags}</div>` : ''}
+                        ${entry.notes ? `<p class="text-sm text-slate-800 mt-2 bg-white/60 p-3 rounded-lg leading-relaxed">"${entry.notes}"</p>` : ''}
+                    </div>
+                `;
+            });
+            historyList.innerHTML = html;
+
+            document.querySelectorAll('.edit-entry').forEach(btn => {
+                btn.addEventListener('click', (e) => loadEntryIntoForm(e.currentTarget.dataset.id));
+            });
+        }
+
+        const moodColors = {
+            'tristeza': 'bg-blue-500', 'neutro': 'bg-slate-300',
+            'alegria': 'bg-green-500', 'euforia': 'bg-orange-500', 'misto': 'bg-purple-500'
+        };
+
+        function renderHeatmap() {
+            heatmap.innerHTML = '';
+            for (let i = 364; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const localDate = new Date(d.getTime() - (d.getTimezoneOffset() * 60000));
+                const dateStr = localDate.toISOString().split('T')[0];
+                
+                const dayEntries = entriesData.filter(e => e.date === dateStr);
+                const entry = dayEntries.length > 0 ? dayEntries[0] : null; 
+                const colorClass = entry ? (moodColors[entry.mood] || 'bg-slate-300') : 'bg-slate-100';
+                
+                const square = document.createElement('div');
+                const brDate = dateStr.split('-').reverse().join('/');
+                
+                // Tamanho aumentado do quadrado
+                square.className = `w-3 h-3 sm:w-4 sm:h-4 rounded-sm ${colorClass} hover:ring-2 ring-offset-1 ring-indigo-400 cursor-pointer transition-all`;
+                square.title = entry ? `${brDate}: ${dayEntries.length} registro(s)` : `${brDate}: Sem registro`;
+                
+                square.addEventListener('click', () => {
+                    // Ao clicar num dia em branco, abre form de novo registro praquele dia
+                    if(dayEntries.length === 0) {
+                        resetForm();
+                        dateInput.value = dateStr;
+                        showForm();
+                    } else {
+                        // Se tem registros, filtra o histórico pra facilitar a leitura/edição
+                        renderHistoryList(dayEntries);
+                        btnShowAll.classList.remove('hidden');
+                        window.scrollTo({ top: document.getElementById('history-list').offsetTop, behavior: 'smooth' });
+                    }
+                });
+                heatmap.appendChild(square);
+            }
+        }
+
+        btnShowAll.addEventListener('click', () => {
+            btnShowAll.classList.add('hidden');
+            renderHistoryList(entriesData);
+        });
+
+        // ---- FORM HELPERS ----
         function loadEntryIntoForm(id) {
             const entry = entriesData.find(e => e.id === id);
             if (!entry) return;
 
-            // Preenche o formulário
             entryIdInput.value = entry.id;
             dateInput.value = entry.date;
+            entryTitleInput.value = entry.title || '';
             moodIntensity.value = entry.intensity || 5;
             energyLevel.value = entry.energy || 5;
             sleepTime.value = entry.sleepTime || '';
             wakeTime.value = entry.wakeTime || '';
             freeNotes.value = entry.notes || '';
             
-            // Radio Mood
             document.querySelector(`input[name="mood"][value="${entry.mood}"]`).checked = true;
+            document.querySelectorAll('.markers').forEach(cb => { cb.checked = entry.markers?.includes(cb.value); });
 
-            // Checkboxes
-            document.querySelectorAll('.markers').forEach(cb => {
-                cb.checked = entry.markers && entry.markers.includes(cb.value);
-            });
-
-            // Altera UI
-            formTitle.textContent = `Editando Registro (${entry.date})`;
+            formTitle.textContent = `Editando Registro (${entry.date.split('-').reverse().join('/')})`;
             btnSave.textContent = "Atualizar Registro";
-            btnCancel.classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            btnDelete.classList.remove('hidden');
+            
+            showForm();
         }
 
         function resetForm() {
             entryIdInput.value = '';
             dateInput.valueAsDate = new Date();
+            entryTitleInput.value = '';
             moodIntensity.value = 5;
             energyLevel.value = 5;
             sleepTime.value = '';
@@ -424,74 +547,112 @@
             document.querySelectorAll('.markers').forEach(cb => cb.checked = false);
             
             formTitle.textContent = "Novo Registro";
-            btnSave.textContent = "Salvar Registro Seguro";
-            btnCancel.classList.add('hidden');
+            btnSave.textContent = "Salvar Registro";
+            btnDelete.classList.add('hidden');
         }
-
-        btnCancel.addEventListener('click', resetForm);
-
-        // ---- UI HELPERS ----
-        const moodColors = {
-            'tristeza': 'bg-blue-500',
-            'neutro': 'bg-slate-300',
-            'alegria': 'bg-green-500',
-            'euforia': 'bg-orange-500',
-            'misto': 'bg-purple-500'
-        };
-
-        function generateHistoryHTML(entry) {
-            const colorClass = moodColors[entry.mood] || 'bg-slate-200';
-            const markersTags = (entry.markers || []).map(m => `<span class="bg-white/50 px-2 py-0.5 rounded text-xs">${m}</span>`).join('');
+        
+        // ---- BUSCA LOCAL EM DADOS DESCRIPTOGRAFADOS ----
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase().trim();
             
-            return `
-                <div class="${colorClass} bg-opacity-20 p-3 rounded-lg border border-white/40 cursor-pointer hover:shadow-md transition edit-entry" data-id="${entry.id}">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-slate-800">${entry.date.split('-').reverse().join('/')}</span>
-                        <span class="text-xs font-semibold px-2 py-1 bg-white rounded uppercase">${entry.mood}</span>
-                    </div>
-                    <div class="flex gap-4 text-xs mb-2 text-slate-700">
-                        <span>Intensidade: ${entry.intensity}/10</span>
-                        <span>Energia: ${entry.energy}/10</span>
-                        ${entry.sleepTime && entry.wakeTime ? `<span>Sono: ${entry.sleepTime} às ${entry.wakeTime}</span>` : ''}
-                    </div>
-                    ${markersTags ? `<div class="flex flex-wrap gap-1 mb-2">${markersTags}</div>` : ''}
-                    ${entry.notes ? `<p class="text-sm text-slate-700 mt-2 italic bg-white/40 p-2 rounded">"${entry.notes}"</p>` : ''}
-                </div>
-            `;
-        }
-
-        // ---- HEATMAP CORRIGIDO (FUSO HORÁRIO) ----
-        function renderHeatmap() {
-            heatmap.innerHTML = '';
-            for (let i = 29; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-                
-                // CORREÇÃO: Ajusta o fuso horário local para evitar que o .toISOString() avance para o dia seguinte
-                const localDate = new Date(d.getTime() - (d.getTimezoneOffset() * 60000));
-                const dateStr = localDate.toISOString().split('T')[0];
-                
-                // Pega o registro mais recente feito naquele dia
-                const entry = entriesData.find(e => e.date === dateStr);
-                const colorClass = entry ? (moodColors[entry.mood] || 'bg-slate-300') : 'bg-slate-100';
-                
-                const square = document.createElement('div');
-                square.className = `w-4 h-4 rounded-sm ${colorClass} hover:ring-2 ring-indigo-400 cursor-pointer transition`;
-                square.title = entry ? `${dateStr.split('-').reverse().join('/')}: ${entry.mood}` : `${dateStr.split('-').reverse().join('/')}: Sem registro`;
-                
-                square.addEventListener('click', () => {
-                    if (entry) {
-                        // Se houverem vários registros no dia, o clique do heatmap abre o último
-                        loadEntryIntoForm(entry.id);
-                    } else {
-                        resetForm();
-                        dateInput.value = dateStr;
-                    }
-                });
-
-                heatmap.appendChild(square);
+            if (!term) {
+                renderHistoryList(entriesData);
+                return;
             }
-        }
+
+            const filteredData = entriesData.filter(entry => {
+                // Monta uma string gigante com todo o conteúdo do dia para a busca bater
+                const searchableString = `
+                    ${entry.date.split('-').reverse().join('/')} 
+                    ${entry.title || ''} 
+                    ${entry.mood} 
+                    ${entry.markers ? entry.markers.join(' ') : ''} 
+                    ${entry.notes || ''}
+                `.toLowerCase();
+
+                return searchableString.includes(term);
+            });
+
+            renderHistoryList(filteredData);
+            btnShowAll.classList.remove('hidden'); // Exibe o botão de resetar lista
+        });
+
+        // Modifique também o evento do btnShowAll para limpar a busca:
+        btnShowAll.addEventListener('click', () => {
+            btnShowAll.classList.add('hidden');
+            searchInput.value = ''; // Limpa o texto
+            renderHistoryList(entriesData);
+        });
+
+        // ---- EXPORTAR / IMPORTAR BACKUP CRIPTOGRAFADO ----
+        // EXPORTAR
+        btnExport.addEventListener('click', async () => {
+            if (!currentUser) return alert("Faça login primeiro.");
+            try {
+                // Puxa o dado bruto (criptografado) direto do banco
+                const q = query(collection(db, `users/${currentUser.uid}/entries`));
+                const snap = await getDocs(q);
+                const backup = [];
+                snap.forEach(docSnap => backup.push({ id: docSnap.id, ...docSnap.data() }));
+
+                if (backup.length === 0) return alert("Nenhum dado para exportar.");
+
+                // Cria o arquivo JSON e aciona o download
+                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `mood_backup_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                alert("Erro ao exportar: " + e.message);
+            }
+        });
+
+        // IMPORTAR
+        btnImportTrigger.addEventListener('click', () => {
+            if (!currentUser) return alert("Faça login primeiro.");
+            fileImport.click();
+        });
+
+        fileImport.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const backup = JSON.parse(event.target.result);
+                    if (!Array.isArray(backup)) throw new Error("Formato inválido. O arquivo deve ser um JSON gerado pelo MooD.");
+
+                    if (!confirm(`Deseja importar ${backup.length} registros? Se houver registros no banco com a mesma data/ID, eles serão sobrescritos.`)) return;
+
+                    let importedCount = 0;
+                    for (const item of backup) {
+                        // Verifica se a estrutura bate com o banco de dados
+                        if (item.id && item.payload && item.dateObj) {
+                            await setDoc(doc(db, `users/${currentUser.uid}/entries`, item.id), {
+                                payload: item.payload,
+                                dateObj: item.dateObj
+                            });
+                            importedCount++;
+                        }
+                    }
+                    alert(`${importedCount} registros importados com sucesso!`);
+                    
+                    // Recarrega a tela usando a chave mestre atual para exibir os novos dados
+                    if (encryptionKey) loadData(); 
+                    
+                } catch (err) {
+                    alert("Erro ao ler o arquivo: " + err.message);
+                } finally {
+                    fileImport.value = ''; // Limpa o input para permitir selecionar o mesmo arquivo de novo se precisar
+                }
+            };
+            reader.readAsText(file);
+        });
+
     </script>
 </body>
 </html>
