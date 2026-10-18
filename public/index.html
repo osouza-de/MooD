@@ -9,6 +9,15 @@
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐮</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        @keyframes pastureFade {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-pasture {
+            animation: pastureFade 0.4s ease-out forwards;
+        }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
 
@@ -41,7 +50,7 @@
     <div id="app-screen" class="hidden max-w-5xl mx-auto p-4 sm:p-6 pb-20 relative">
         <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 border-b-2 border-zinc-200 pb-4 gap-4">
             <div class="flex items-end gap-3">
-                <span class="text-4xl drop-shadow-sm">🐮</span>
+                <span id="header-cow" class="text-4xl drop-shadow-sm inline-block hover:scale-125 hover:rotate-12 transition-transform cursor-pointer" title="Muuuu!">🐮</span>
                 <div>
                     <h1 class="text-3xl font-black text-zinc-900 tracking-tighter leading-none">Moo<span class="text-pink-500">D</span></h1>
                     <p id="user-info" class="text-sm text-zinc-500 mt-1 font-medium">Conectado como...</p>
@@ -62,9 +71,31 @@
             </div>
         </header>
 
+        <!-- MENSAGEM DE BLOQUEIO (Aparece se o modal for fechado sem a senha) -->
+        <div id="locked-fallback-view" class="hidden text-center py-12 px-6 bg-white rounded-xl shadow-md border border-slate-200 max-w-md mx-auto mt-10">
+            <div class="text-5xl mb-4 select-none">🔒🐮</div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Pastos Trancados</h3>
+            <p class="text-sm text-slate-600 mb-6 leading-relaxed">
+                O aplicativo está travado por falta de senha. Não é possível desbloquear o acesso aos dados sem a chave mestre correta.
+            </p>
+
+            <!-- 👇 NOVO BOTÃO PARA VOLTAR A TENTAR O DESBLOQUEIO 👇 -->
+            <button id="btn-reopen-unlock" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-sm flex items-center justify-center gap-2 mb-3">
+                <span>🔑</span> Destravar MooD
+            </button>
+            <!-- 👆 FIM DO NOVO BOTÃO 👆 -->
+
+            <button id="btn-force-logout" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2">
+                <span>🚪</span> Sair
+            </button>
+        </div>
+
         <!-- MODAL DA SENHA MESTRE -->
         <div id="master-key-modal" class="fixed inset-0 bg-zinc-900/80 z-[100] flex items-center justify-center hidden backdrop-blur-sm">
-            <div class="bg-white p-8 rounded-[2rem] shadow-2xl border-4 border-zinc-900 max-w-md w-full mx-4">
+            <div class="bg-white p-8 rounded-[2rem] shadow-2xl border-4 border-zinc-900 max-w-md w-full mx-4 animate-pasture">
+                <button id="btn-close-unlock" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
                 <div class="flex justify-center mb-4 text-pink-500">
                     <span class="text-6xl drop-shadow-sm">🥛</span>
                 </div>
@@ -118,7 +149,7 @@
                 </div>
 
                 <!-- Heatmap Estilo GitHub (365 Dias) -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 animate-pasture">
                     <h3 class="text-lg font-bold text-slate-700 mb-4">MooDMap (Últimos 365 dias)</h3>
                     <div id="heatmap" class="flex flex-wrap gap-1 md:gap-1.5">
                         <!-- Quadrados gerados via JS -->
@@ -135,7 +166,7 @@
                 </div>
 
                 <!-- Lista de Histórico -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 animate-pasture">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                         <h3 class="text-lg font-bold text-slate-700 whitespace-nowrap">Histórico</h3>
                         <div class="w-full relative">
@@ -161,6 +192,17 @@
 
                 <h2 id="form-title" class="text-2xl font-bold text-slate-800 mb-8 border-b pb-4">Novo Registro</h2>
                 
+                <!-- MASCOTE DA VAQUINHA REATIVA -->
+                <div id="cow-mascot-container" class="flex items-center gap-4 bg-pink-50/60 border-2 border-pink-200 p-4 rounded-2xl mb-6 transition-all duration-300">
+                    <div id="cow-avatar" class="text-5xl drop-shadow-md select-none transition-transform duration-300 animate-bounce">
+                        🐮
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-zinc-800 text-sm">Acompanhante do Pasto</h4>
+                        <p id="cow-speech" class="text-xs text-zinc-600 font-medium mt-0.5">Muuu... Como está o clima no teu pasto hoje?</p>
+                    </div>
+                </div>
+
                 <input type="hidden" id="entry-id">
 
                 <div class="space-y-6">
@@ -266,7 +308,7 @@
 
         </div> <!-- FECHAMENTO CORRETO DO MAIN-CONTENT -->
         <!-- MODAL DE VISUALIZAÇÃO DE REGISTRO -->
-        <div id="view-modal" class="fixed inset-0 bg-zinc-900/80 z-[100] flex items-center justify-center hidden backdrop-blur-sm">
+        <div id="view-modal" class="fixed inset-0 bg-zinc-900/80 z-[100] flex items-center justify-center hidden backdrop-blur-sm animate-pasture">
             <div class="bg-white p-6 sm:p-8 rounded-[2rem] shadow-2xl border-4 border-zinc-900 max-w-lg w-full mx-4 relative">
                 <button id="btn-close-view" class="absolute top-6 right-6 text-zinc-400 hover:text-zinc-700 transition">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -350,6 +392,10 @@
         const dataActions = document.getElementById('data-actions');
         const masterKeyTitle = document.getElementById('master-key-title');
         const masterKeyDesc = document.getElementById('master-key-desc');
+        const btnReopenUnlock = document.getElementById('btn-reopen-unlock');
+        const btnCloseUnlock = document.getElementById('btn-close-unlock');
+        const lockedFallbackView = document.getElementById('locked-fallback-view');
+        const btnForceLogout = document.getElementById('btn-force-logout');
 
         // BOTOES GERAIS
         const btnLogin = document.getElementById('btn-login');
@@ -413,8 +459,9 @@
         }
 
         dateInput.valueAsDate = new Date();
-        
-        
+
+        import { playCowbellSound, playSadMuuSound, playDeleteSound } from './audio.js';
+
         // ---- HOOK DO ALERT NATIVO (MONKEY PATCHING) ----
         const nativeAlert = window.alert; // Guarda o alert original do navegador
 
@@ -451,6 +498,22 @@
             }, 3500);
         };
         // ------------------------------------------------
+
+        // ==========================================
+        // GATILHO DO MUGIDO NO CABEÇALHO
+        // ==========================================
+        const headerCow = document.getElementById('header-cow');
+        if (headerCow) {
+            headerCow.addEventListener('click', () => {
+                playSadMuuSound();
+                
+                // Opcional: Adiciona um pequeno efeito visual de rotação/impulso ao clicar
+                headerCow.classList.add('scale-125', 'rotate-45');
+                setTimeout(() => {
+                    headerCow.classList.remove('scale-125', 'rotate-45');
+                }, 300);
+            });
+        }
 
         // ---- CONTROLE DE TELAS (VIEWS) ----
         function showForm() {
@@ -548,10 +611,40 @@
             }
         });
 
+        // Close master unlock modal
+        btnCloseUnlock.addEventListener('click', () => {
+            masterKeyModal.classList.add('hidden');
+            
+            // Mostra a mensagem de aviso no ecrã principal
+            if (lockedFallbackView) {
+                lockedFallbackView.classList.remove('hidden');
+            }
+            
+            // Opcional: Oculta o restante conteúdo da app se estiver visível
+            const protectedContent = document.getElementById('app-main-container'); // Ajusta para o ID do teu container principal
+            if (protectedContent) {
+                protectedContent.classList.add('hidden');
+            }
+        });
+
+        // Ação do botão de deslogar na tela de aviso
+        btnForceLogout.addEventListener('click', async () => await signOut(auth));
+
+        btnReopenUnlock.addEventListener('click', () => {
+            // Esconde a tela de aviso de bloqueio
+            lockedFallbackView.classList.add('hidden');
+
+            // Reabre o modal de introdução da Chave Mestre
+            masterKeyModal.classList.remove('hidden');
+        });
+
         // ---- CRYPTO: ZERO KNOWLEDGE VERIFICATION ----
         btnApplyKey.addEventListener('click', async () => {
             const pwd = passwordInput.value;
-            if (pwd.length < 4) return alert('A senha deve ter pelo menos 4 caracteres.');
+            if (pwd.length < 4) { 
+                playSadMuuSound();
+                return alert('A senha deve ter pelo menos 4 caracteres.');
+            }
 
             if (validationHash) {
                 // MODO VERIFICAÇÃO: Tenta descriptografar o hash salvo
@@ -560,9 +653,11 @@
                     const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
                     
                     if (decryptedStr !== VALIDATION_TOKEN) {
+                        playSadMuuSound();
                         return alert("Senha incorreta! Tente novamente.");
                     }
                 } catch (e) {
+                    playSadMuuSound();
                     return alert("Senha incorreta! Tente novamente.");
                 }
             } else {
@@ -765,6 +860,61 @@
             viewModal.classList.remove('hidden');
         }
 
+        // ==========================================
+        // MASCOTE DA VAQUINHA REATIVA AO HUMOR
+        // ==========================================
+        const moodRadios = document.querySelectorAll('input[name="mood"]');
+        const cowAvatar = document.getElementById('cow-avatar');
+        const cowSpeech = document.getElementById('cow-speech');
+        const cowContainer = document.getElementById('cow-mascot-container');
+
+        const cowReactions = {
+            'tristeza': {
+                emoji: '🐮💧',
+                speech: 'Moo... Dias nublados e chuvosos fazem parte da pastagem. Força!',
+                bg: 'bg-blue-50/60 border-blue-200',
+                anim: 'animate-pulse'
+            },
+            'neutro': {
+                emoji: '🐮🌿',
+                speech: 'Mastigando o capim pacientemente... Um dia tranquilo no pasto.',
+                bg: 'bg-slate-50 border-slate-200',
+                anim: ''
+            },
+            'alegria': {
+                emoji: '🐮🌻',
+                speech: 'Muuuito bem! O sol está a brilhar forte no campo hoje!',
+                bg: 'bg-green-50/60 border-green-200',
+                anim: 'animate-bounce'
+            },
+            'euforia': {
+                emoji: '🚀🐮✨',
+                speech: 'Uau! A vaquinha está a correr pelo pasto todo a saltar cercas!',
+                bg: 'bg-orange-50/60 border-orange-200',
+                anim: 'animate-bounce'
+            },
+            'misto': {
+                emoji: '🐮🌪️',
+                speech: 'Ventos trocados no campo... Um turbilhão de emoções por aqui.',
+                bg: 'bg-purple-50/60 border-purple-200',
+                anim: 'animate-spin'
+            }
+        };
+
+        moodRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const mood = e.target.value;
+                const reaction = cowReactions[mood];
+                if (!reaction) return;
+
+                cowAvatar.textContent = reaction.emoji;
+                cowSpeech.textContent = reaction.speech;
+                
+                cowAvatar.className = `text-5xl drop-shadow-md select-none transition-transform duration-300 ${reaction.anim}`;
+                cowContainer.className = `flex items-center gap-4 border-2 p-4 rounded-2xl mb-6 transition-all duration-300 ${reaction.bg}`;
+            });
+        });
+
         const moodColors = {
             'tristeza': 'bg-blue-500', 'neutro': 'bg-slate-300',
             'alegria': 'bg-green-500', 'euforia': 'bg-orange-500', 'misto': 'bg-purple-500'
@@ -830,6 +980,27 @@
             btnDelete.classList.remove('hidden');
             
             showForm();
+        }
+
+        function getCalculatedSleep(startTime, endTime) {
+            if (!startTime || !endTime) return "--";
+            
+            const [startH, startM] = startTime.split(':').map(Number);
+            const [endH, endM] = endTime.split(':').map(Number);
+            
+            let startMinutes = startH * 60 + startM;
+            let endMinutes = endH * 60 + endM;
+            
+            // Se acordou no dia seguinte (passou da meia-noite)
+            if (endMinutes <= startMinutes) {
+                endMinutes += 24 * 60;
+            }
+            
+            const diff = endMinutes - startMinutes;
+            const hours = Math.floor(diff / 60);
+            const minutes = diff % 60;
+            
+            return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
         }
 
         function resetForm() {
@@ -1006,8 +1177,10 @@
                     localStorage.setItem('mood_reminder_time', reminderTimeInput.value);
                     localStorage.removeItem('mood_last_notified');
                     updateReminderUI();
+                    playCowbellSound()
                     window.alert("Lembrete configurado com sucesso!");
                 } else {
+                    playSadMuuSound();
                     window.alert("Por favor, selecione um horário válido.");
                 }
             });
@@ -1015,6 +1188,7 @@
             btnRemoveReminder.addEventListener('click', () => {
                 localStorage.removeItem('mood_reminder_time');
                 updateReminderUI();
+                playCowbellSound();
                 window.alert("Lembrete desativado.");
             });
         }
