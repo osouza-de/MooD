@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MooD - Diário de Humor</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ec4899">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐮</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
@@ -88,11 +91,29 @@
                         Registrar
                     </button>
                 </div>
+                
+                <!-- LEMBRETE DIÁRIO AQUI -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-zinc-200 mt-8 mb-8">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl drop-shadow-sm">⏰</span>
+                            <div>
+                                <h3 class="text-lg font-bold text-zinc-800">Lembrete da Ordenha</h3>
+                                <p class="text-sm text-zinc-500 font-medium">Receba uma notificação do navegador para não esquecer de registrar seu humor.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <!-- AQUI ESTÁ O CAMPO DE HORA E O BOTÃO -->
+                            <input type="time" id="reminder-time" class="p-3 rounded-xl border-2 border-zinc-200 focus:outline-none focus:border-pink-400 focus:ring-4 focus:ring-pink-100 bg-zinc-50 font-bold text-zinc-700 w-full sm:w-auto">
+                            <button id="btn-save-reminder" class="bg-zinc-100 text-zinc-600 border-2 border-zinc-200 font-bold px-5 py-3 rounded-xl hover:bg-pink-50 hover:text-pink-600 hover:border-pink-300 transition whitespace-nowrap">Ativar</button>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Heatmap Estilo GitHub (365 Dias) -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h3 class="text-lg font-bold text-slate-700 mb-4">MooDMap (Últimos 365 dias)</h3>
-                <div id="heatmap" class="flex flex-wrap gap-1 md:gap-1.5">
+                    <h3 class="text-lg font-bold text-slate-700 mb-4">MooDMap (Últimos 365 dias)</h3>
+                    <div id="heatmap" class="flex flex-wrap gap-1 md:gap-1.5">
                         <!-- Quadrados gerados via JS -->
                     </div>
                     <div class="flex gap-3 text-sm mt-6 justify-end text-slate-500 items-center">
@@ -800,8 +821,92 @@
             reader.readAsText(file);
         });
 
+        // ==========================================
+        // REGISTO DO PWA (SERVICE WORKER)
+        // ==========================================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('SW registado com sucesso:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('Falha no registo do SW:', error);
+                    });
+            });
+        }
+
+        // ==========================================
+        // SISTEMA DE LEMBRETE E NOTIFICAÇÕES WEB
+        // ==========================================
+        const reminderTimeInput = document.getElementById('reminder-time');
+        const btnSaveReminder = document.getElementById('btn-save-reminder');
+
+        // Carrega o horário previamente salvo
+        const savedReminder = localStorage.getItem('mood_reminder_time');
+        if (savedReminder && reminderTimeInput && btnSaveReminder) {
+            reminderTimeInput.value = savedReminder;
+            btnSaveReminder.textContent = 'Ativado ✓';
+            btnSaveReminder.classList.replace('bg-zinc-100', 'bg-emerald-100');
+            btnSaveReminder.classList.replace('text-zinc-600', 'text-emerald-700');
+            btnSaveReminder.classList.replace('border-zinc-200', 'border-emerald-300');
+        }
+
+        if (btnSaveReminder) {
+            btnSaveReminder.addEventListener('click', async () => {
+                // Desativar lembrete se o campo de tempo for limpo
+                if (!reminderTimeInput.value) {
+                    localStorage.removeItem('mood_reminder_time');
+                    btnSaveReminder.textContent = 'Ativar';
+                    btnSaveReminder.classList.replace('bg-emerald-100', 'bg-zinc-100');
+                    btnSaveReminder.classList.replace('text-emerald-700', 'text-zinc-600');
+                    btnSaveReminder.classList.replace('border-emerald-300', 'border-zinc-200');
+                    showToast("Lembrete desativado.", "warning");
+                    return;
+                }
+
+                // Pedir permissão ao utilizador e ao sistema operativo
+                if (Notification.permission !== "granted") {
+                    const permission = await Notification.requestPermission();
+                    if (permission !== "granted") {
+                        return showToast("Precisas de permitir as notificações no navegador.", "error");
+                    }
+                }
+
+                localStorage.setItem('mood_reminder_time', reminderTimeInput.value);
+                btnSaveReminder.textContent = 'Ativado ✓';
+                btnSaveReminder.classList.replace('bg-zinc-100', 'bg-emerald-100');
+                btnSaveReminder.classList.replace('text-zinc-600', 'text-emerald-700');
+                btnSaveReminder.classList.replace('border-zinc-200', 'border-emerald-300');
+                showToast("Lembrete configurado com sucesso!", "success");
+            });
+        }
+
+        // Relógio local contínuo que dispara a notificação
+        setInterval(() => {
+            const reminderTime = localStorage.getItem('mood_reminder_time');
+            if (!reminderTime || Notification.permission !== "granted") return;
+
+            const now = new Date();
+            const currentHours = now.getHours().toString().padStart(2, '0');
+            const currentMinutes = now.getMinutes().toString().padStart(2, '0');
+            const currentTimeStr = `${currentHours}:${currentMinutes}`;
+
+            if (currentTimeStr === reminderTime) {
+                const lastFired = localStorage.getItem('mood_last_notified');
+                const todayStr = now.toISOString().split('T')[0];
+
+                if (lastFired !== todayStr) {
+                    new Notification("MooD 🐮", {
+                        body: "Muuuu! Chegou a hora de ordenhar os dados e registar o teu humor no pasto.",
+                        icon: "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐮</text></svg>"
+                    });
+                    localStorage.setItem('mood_last_notified', todayStr);
+                }
+            }
+        }, 60000);
     </script>
-<!-- CONTAINER DOS ALERTS CUSTOMIZADOS -->
+    <!-- CONTAINER DOS ALERTS CUSTOMIZADOS -->
     <div id="toast-container" class="fixed top-6 left-1/2 -translate-x-1/2 z-[200] flex flex-col gap-3 pointer-events-none items-center w-full max-w-sm px-4"></div>
 </body>
 </html>
