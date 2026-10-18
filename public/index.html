@@ -103,9 +103,16 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-3 w-full sm:w-auto">
-                            <!-- AQUI ESTÁ O CAMPO DE HORA E O BOTÃO -->
-                            <input type="time" id="reminder-time" class="p-3 rounded-xl border-2 border-zinc-200 focus:outline-none focus:border-pink-400 focus:ring-4 focus:ring-pink-100 bg-zinc-50 font-bold text-zinc-700 w-full sm:w-auto">
-                            <button id="btn-save-reminder" class="bg-zinc-100 text-zinc-600 border-2 border-zinc-200 font-bold px-5 py-3 rounded-xl hover:bg-pink-50 hover:text-pink-600 hover:border-pink-300 transition whitespace-nowrap">Ativar</button>
+                            <!-- ESTE SPAN É OBRIGATÓRIO PARA O ERRO SUMIR -->
+                            <span id="reminder-status-msg" class="text-sm font-bold text-emerald-600 hidden"></span>
+                            
+                            <input type="time" id="reminder-time" class="p-3 rounded-xl border-2 border-zinc-200 focus:outline-none focus:border-pink-400 focus:ring-4 focus:ring-pink-100 bg-zinc-50 font-bold text-zinc-700 w-full sm:w-auto hidden">
+                            
+                            <button id="btn-save-reminder" class="bg-zinc-900 text-white font-bold px-5 py-3 rounded-xl hover:bg-zinc-800 transition whitespace-nowrap">LEMBRETE</button>
+                            
+                            <button id="btn-remove-reminder" class="hidden p-2 text-zinc-400 hover:text-rose-500 transition" title="Remover Lembrete">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -258,7 +265,49 @@
             </div>
 
         </div> <!-- FECHAMENTO CORRETO DO MAIN-CONTENT -->
-        
+        <!-- MODAL DE VISUALIZAÇÃO DE REGISTRO -->
+        <div id="view-modal" class="fixed inset-0 bg-zinc-900/80 z-[100] flex items-center justify-center hidden backdrop-blur-sm">
+            <div class="bg-white p-6 sm:p-8 rounded-[2rem] shadow-2xl border-4 border-zinc-900 max-w-lg w-full mx-4 relative">
+                <button id="btn-close-view" class="absolute top-6 right-6 text-zinc-400 hover:text-zinc-700 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                
+                <div class="flex items-center justify-between mb-6 border-b-2 border-zinc-100 pb-4">
+                    <div>
+                        <span id="view-date" class="text-xs font-bold uppercase tracking-wider text-pink-500 bg-pink-50 px-2.5 py-1 rounded-md">Data</span>
+                        <h3 id="view-title" class="text-2xl font-black text-zinc-900 mt-1">Título do Registro</h3>
+                    </div>
+                    <span id="view-mood-badge" class="text-xs font-bold px-3 py-1.5 rounded-md uppercase tracking-wider bg-zinc-100 text-zinc-800">Humor</span>
+                </div>
+
+                <div class="space-y-4 text-zinc-700">
+                    <div class="flex gap-4 text-sm font-medium bg-zinc-50 p-3 rounded-xl border border-zinc-200">
+                        <div>Intensidade: <span id="view-intensity" class="font-bold text-zinc-900">0</span>/10</div>
+                        <div>Energia: <span id="view-energy" class="font-bold text-zinc-900">0</span>/10</div>
+                        <div id="view-sleep-container" class="hidden">Sono: <span id="view-sleep" class="font-bold text-zinc-900"></span></div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Marcadores e Hábitos</h4>
+                        <div id="view-markers" class="flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Observações</h4>
+                        <p id="view-notes" class="text-sm bg-zinc-50 p-4 rounded-xl border border-zinc-200 leading-relaxed italic text-zinc-600">Nenhuma observação registrada.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-6 mt-6 border-t-2 border-zinc-100">
+                    <button id="btn-edit-from-view" class="flex-1 bg-zinc-900 text-white py-3 rounded-xl font-bold hover:bg-zinc-800 transition shadow-md flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        Editar Registro
+                    </button>
+                    <button id="btn-close-view-action" class="px-5 bg-zinc-100 text-zinc-700 py-3 rounded-xl font-bold hover:bg-zinc-200 transition">Fechar</button>
+                </div>
+            </div>
+        </div>
+
     </div> <!-- FECHAMENTO DO APP-SCREEN -->
 
     <script type="module">
@@ -335,7 +384,36 @@
         const btnCancel = document.getElementById('btn-cancel');
         const btnCloseForm = document.getElementById('btn-close-form');
 
+        // Referências do Modal de Visualização
+        const viewModal = document.getElementById('view-modal');
+        const btnCloseView = document.getElementById('btn-close-view');
+        const btnCloseViewAction = document.getElementById('btn-close-view-action');
+        const btnEditFromView = document.getElementById('btn-edit-from-view');
+        
+        const viewDate = document.getElementById('view-date');
+        const viewTitle = document.getElementById('view-title');
+        const viewMoodBadge = document.getElementById('view-mood-badge');
+        const viewIntensity = document.getElementById('view-intensity');
+        const viewEnergy = document.getElementById('view-energy');
+        const viewSleep = document.getElementById('view-sleep');
+        const viewSleepContainer = document.getElementById('view-sleep-container');
+        const viewMarkers = document.getElementById('view-markers');
+        const viewNotes = document.getElementById('view-notes');
+
+        // Define se estamos em desenvolvimento (pode ser por hostname ou flag manual)
+        const isDevelopment = window.location.hostname === 'localhost' || 
+                              window.location.hostname === '127.0.0.1' || 
+                              window.location.hostname.includes('192.168.');
+
+        // Se NÃO estivermos em desenvolvimento, silencia o console.log
+        if (!isDevelopment) {
+            console.log = function() {}; // Transforma o console.log numa função vazia
+            // Opcional: podes fazer o mesmo para avisos se quiseres limpar total:
+            // console.warn = function() {}; 
+        }
+
         dateInput.valueAsDate = new Date();
+        
         
         // ---- HOOK DO ALERT NATIVO (MONKEY PATCHING) ----
         const nativeAlert = window.alert; // Guarda o alert original do navegador
@@ -604,43 +682,87 @@
         }
 
         // ---- UI RENDERING ----
+        let viewingEntryId = null;
+
+        // Fechar modal de visualização
+        btnCloseView.addEventListener('click', () => viewModal.classList.add('hidden'));
+        btnCloseViewAction.addEventListener('click', () => viewModal.classList.add('hidden'));
+
+        // Clicar no botão "Editar Registro" dentro da visualização
+        btnEditFromView.addEventListener('click', () => {
+            viewModal.classList.add('hidden');
+            if (viewingEntryId) {
+                loadEntryIntoForm(viewingEntryId);
+            }
+        });
+
+        // Modificação na listagem para abrir a VISUALIZAÇÃO em vez da edição direta
         function renderHistoryList(dataList) {
             if (dataList.length === 0) {
-                historyList.innerHTML = '<div class="p-8 text-center text-slate-500 bg-slate-50 rounded-lg border border-dashed border-slate-300">Nenhum registro encontrado.</div>';
+                historyList.innerHTML = '<div class="p-8 text-center text-zinc-500 bg-zinc-50 rounded-lg border border-dashed border-zinc-300">Nenhum bezerro no pasto hoje...</div>';
                 return;
             }
-            
             let html = '';
             dataList.forEach(entry => {
-                const colorClass = moodColors[entry.mood] || 'bg-slate-200';
-                const markersTags = (entry.markers || []).map(m => `<span class="bg-white/60 px-2.5 py-1 rounded-md text-xs font-medium text-slate-700">${m}</span>`).join('');
+                const colorClass = moodColors[entry.mood] || 'bg-zinc-200';
+                const markersTags = (entry.markers || []).map(m => `<span class="bg-white/60 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-700">${m}</span>`).join('');
                 const [y, m, d] = entry.date.split('-');
-                const brDate = `${d}/${m}/${y}`;
-
+                
                 html += `
-                    <div class="${colorClass} bg-opacity-20 p-5 rounded-xl border border-white/50 cursor-pointer hover:shadow-lg transition-all edit-entry" data-id="${entry.id}">
+                    <div class="${colorClass} bg-opacity-20 p-5 rounded-xl border border-white/50 cursor-pointer hover:shadow-lg transition-all view-entry" data-id="${entry.id}">
                         <div class="flex justify-between items-start mb-3">
                             <div>
-                                <h4 class="font-bold text-lg text-slate-800">${brDate}</h4>
-                                <span class="text-sm text-slate-600 font-medium">${entry.title || 'Registro'}</span>
+                                <h4 class="font-bold text-lg text-zinc-800">${d}/${m}/${y}</h4>
+                                <span class="text-sm text-zinc-600 font-medium">${entry.title || 'Registro'}</span>
                             </div>
                             <span class="text-xs font-bold px-3 py-1.5 bg-white shadow-sm rounded-md uppercase tracking-wider">${entry.mood}</span>
                         </div>
-                        <div class="flex flex-wrap gap-4 text-sm mb-3 text-slate-700 font-medium bg-white/40 inline-block p-2 rounded-lg">
+                        <div class="flex flex-wrap gap-4 text-sm mb-3 text-zinc-700 font-medium bg-white/40 inline-block p-2 rounded-lg">
                             <span>Intensidade: ${entry.intensity}/10</span>
                             <span>Energia: ${entry.energy}/10</span>
                             ${entry.sleepTime && entry.wakeTime ? `<span>Sono: ${entry.sleepTime} às ${entry.wakeTime}</span>` : ''}
                         </div>
                         ${markersTags ? `<div class="flex flex-wrap gap-2 mb-3">${markersTags}</div>` : ''}
-                        ${entry.notes ? `<p class="text-sm text-slate-800 mt-2 bg-white/60 p-3 rounded-lg leading-relaxed">"${entry.notes}"</p>` : ''}
+                        ${entry.notes ? `<p class="text-sm text-zinc-800 mt-2 bg-white/60 p-3 rounded-lg leading-relaxed">"${entry.notes}"</p>` : ''}
                     </div>
                 `;
             });
             historyList.innerHTML = html;
 
-            document.querySelectorAll('.edit-entry').forEach(btn => {
-                btn.addEventListener('click', (e) => loadEntryIntoForm(e.currentTarget.dataset.id));
+            // Associa o clique ao modal de visualização
+            document.querySelectorAll('.view-entry').forEach(card => {
+                card.addEventListener('click', (e) => openViewModal(e.currentTarget.dataset.id));
             });
+        }
+
+        function openViewModal(id) {
+            const entry = entriesData.find(e => e.id === id);
+            if (!entry) return;
+
+            viewingEntryId = entry.id;
+            const [y, m, d] = entry.date.split('-');
+            viewDate.textContent = `${d}/${m}/${y}`;
+            viewTitle.textContent = entry.title || 'Registro';
+            viewMoodBadge.textContent = entry.mood;
+            viewIntensity.textContent = entry.intensity || 5;
+            viewEnergy.textContent = entry.energy || 5;
+
+            if (entry.sleepTime && entry.wakeTime) {
+                viewSleep.textContent = `${entry.sleepTime} às ${entry.wakeTime}`;
+                viewSleepContainer.classList.remove('hidden');
+            } else {
+                viewSleepContainer.classList.add('hidden');
+            }
+
+            if (entry.markers && entry.markers.length > 0) {
+                viewMarkers.innerHTML = entry.markers.map(m => `<span class="bg-pink-50 text-pink-700 border border-pink-200 px-3 py-1 rounded-lg text-xs font-bold">${m}</span>`).join('');
+            } else {
+                viewMarkers.innerHTML = '<span class="text-xs text-zinc-400 italic">Nenhum marcador selecionado.</span>';
+            }
+
+            viewNotes.textContent = entry.notes ? `"${entry.notes}"` : 'Nenhuma observação registrada.';
+            
+            viewModal.classList.remove('hidden');
         }
 
         const moodColors = {
@@ -882,6 +1004,7 @@
                         }
                     }
                     localStorage.setItem('mood_reminder_time', reminderTimeInput.value);
+                    localStorage.removeItem('mood_last_notified');
                     updateReminderUI();
                     window.alert("Lembrete configurado com sucesso!");
                 } else {
@@ -895,30 +1018,44 @@
                 window.alert("Lembrete desativado.");
             });
         }
-        
-        // Relógio local contínuo que dispara a notificação
+
+        // ==========================================
+        // SISTEMA DE LEMBRETE E NOTIFICAÇÕES WEB (FORÇADO)
+        // ==========================================
         setInterval(() => {
             const reminderTime = localStorage.getItem('mood_reminder_time');
-            if (!reminderTime || Notification.permission !== "granted") return;
+            if (!reminderTime) return;
 
             const now = new Date();
             const currentHours = now.getHours().toString().padStart(2, '0');
             const currentMinutes = now.getMinutes().toString().padStart(2, '0');
             const currentTimeStr = `${currentHours}:${currentMinutes}`;
 
+            // LOG DE DIAGNÓSTICO: Pressione F12 e olhe o Console para ver se batem!
+            console.log("Relógio interno:", currentTimeStr, "| Alarme salvo:", reminderTime);
+
             if (currentTimeStr === reminderTime) {
-                const lastFired = localStorage.getItem('mood_last_notified');
                 const todayStr = now.toISOString().split('T')[0];
+                const lastFired = localStorage.getItem('mood_last_notified');
 
                 if (lastFired !== todayStr) {
-                    new Notification("MooD 🐮", {
-                        body: "Muuuu! Chegou a hora de ordenhar os dados e registar o teu humor no pasto.",
-                        icon: "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐮</text></svg>"
-                    });
-                    localStorage.setItem('mood_last_notified', todayStr);
+                    // Tenta disparar com tratamento de erro forçado
+                    if (Notification.permission === "granted") {
+                        try {
+                            new Notification("MooD 🐮", {
+                                body: "Muuuu! Chegou a hora de ordenhar os dados e registar o teu humor no pasto."
+                            });
+                            localStorage.setItem('mood_last_notified', todayStr);
+                            console.log("Notificação automática disparada com sucesso!");
+                        } catch (e) {
+                            console.error("Erro interno ao criar Notification:", e);
+                        }
+                    } else {
+                        console.warn("Aviso: A permissão de notificação não está concedida (granted).");
+                    }
                 }
             }
-        }, 60000);
+        }, 20000);
     </script>
     <!-- CONTAINER DOS ALERTS CUSTOMIZADOS -->
     <div id="toast-container" class="fixed top-6 left-1/2 -translate-x-1/2 z-[200] flex flex-col gap-3 pointer-events-none items-center w-full max-w-sm px-4"></div>
