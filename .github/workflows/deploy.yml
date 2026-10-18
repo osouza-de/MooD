@@ -9,22 +9,17 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout código
+      - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Instalar Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
+      - name: Instalar Firebase CLI
+        run: npm install -g firebase-tools
 
-      - name: Instalar Dependências e Build
+      - name: Deploy para o Firebase Hosting
         run: |
-          npm ci
-          npm run build # remova se não tiver etapa de build
-
-      - name: Deploy para o Firebase
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}'
-          channelId: live
+          # Transforma o segredo do GitHub em um arquivo físico de credenciais
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > service-account.json
+          
+          # Autentica e força o deploy sem interações manuais
+          export GOOGLE_APPLICATION_CREDENTIALS=service-account.json
+          firebase deploy --only hosting --non-interactive
