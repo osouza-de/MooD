@@ -20,12 +20,13 @@ O **MooD** é uma aplicação web progressiva (PWA) desenvolvida para o registro
 *   **Arquitetura Zero-Knowledge & Segurança:** Sistema de proteção baseado em uma *Master Key* local. Os dados são encriptados e bloqueados na interface, garantindo que o conteúdo do diário fique inacessível caso a sessão seja fechada ou a senha incorreta seja fornecida. Um estado de segurança ("Access Locked") oculta os dados e força o logout ou reautenticação em caso de violação.
 *   **Gestão Completa de Registros (CRUD):** Interface otimizada para criar, ler, atualizar e excluir registros de humor diários, com modais dedicados para entrada de dados e visualização de detalhes do histórico.
 *   **Cálculo Dinâmico de Sono:** O sistema processa automaticamente a duração total do sono (cruzando a meia-noite, se necessário) com base nos horários de deitar e acordar informados. O cálculo é exibido em tempo real no formulário e na listagem do histórico, sem a necessidade de gravar dados redundantes no banco.
+*   **Backup Encriptado & Restauração:** Funcionalidade nativa para exportar todos os registros em um arquivo de backup totalmente criptografado. O sistema inclui a opção de fazer o upload desse arquivo para importar e restaurar o histórico de forma segura em qualquer outro dispositivo, mantendo a integridade e privacidade dos dados.
+*   **Pesquisa Dinâmica:** Sistema de busca e filtragem avançada que permite localizar registros específicos no histórico de forma instantânea, utilizando palavras-chave, anotações ou detalhes específicos preenchidos no diário.
 *   **Experiência PWA Nativa e Suporte Offline:** A aplicação é instalável (WebAPK) em dispositivos móveis. Utiliza Service Workers com a estratégia *Cache First* para garantir carregamento instantâneo, visualização do histórico e uso da interface mesmo sem conexão à internet.
 *   **Feedback Auditivo Integrado (Web Audio API):** Respostas sonoras sintetizadas nativamente no navegador para melhorar a usabilidade e acessibilidade, incluindo:
     *   Confirmação de sucesso ao salvar registros.
     *   Alertas de erro em falhas de validação ou de senha.
     *   Efeito estéreo espacial (panoramic) ao excluir dados.
-*   **CI/CD & Deploy Automatizado:** Pipeline configurada com GitHub Actions para integração contínua. Cada commit na branch `master` dispara um build e publica automaticamente as alterações no Firebase Hosting.
 
 ## 🛠️ Tecnologias Utilizadas
 
@@ -33,9 +34,3 @@ O **MooD** é uma aplicação web progressiva (PWA) desenvolvida para o registro
 *   **Áudio e UX:** Web Audio API (geração de frequências e osciladores em tempo real sem arquivos externos).
 *   **Infraestrutura:** Firebase Hosting e Firebase Authentication.
 *   **DevOps:** GitHub Actions, Docker (para ambientes de desenvolvimento isolados).
-
-## 🚀 Como Executar Localmente
-
-1. Clone este repositório:
-   ```bash
-   git clone [https://github.com/teu-usuario/mood.git](https://github.com/teu-usuario/mood.git)
