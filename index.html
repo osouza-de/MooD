@@ -34,7 +34,6 @@
                 <p id="user-info" class="text-sm text-slate-500 mt-1">Conectado como...</p>
             </div>
             <div class="flex items-center gap-2 relative z-50">
-                <!-- Wrapper que oculta Importar/Exportar até a chave ser aplicada -->
                 <div id="data-actions" class="hidden flex items-center gap-2">
                     <button id="btn-export" title="Exportar Backup Criptografado" class="p-1 text-slate-500 hover:text-indigo-600 transition">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -45,7 +44,6 @@
                     <input type="file" id="file-import" class="hidden" accept=".json">
                     <div class="w-px h-6 bg-slate-300 mx-2"></div>
                 </div>
-                <!-- Botão Sair fica sempre visível -->
                 <button id="btn-logout" class="text-sm font-semibold text-white bg-rose-500 hover:bg-rose-600 px-4 py-1.5 rounded-lg transition-colors shadow-sm">Sair</button>
             </div>
         </header>
@@ -56,11 +54,11 @@
                 <div class="flex justify-center mb-4 text-indigo-600">
                     <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-800 mb-2 text-center">Chave Mestre</h2>
-                <p class="text-slate-600 mb-6 text-center text-sm">Insira a sua chave mestre para acessar os registros. Sem ela, os seus dados não podem ser lidos.</p>
+                <h2 id="master-key-title" class="text-2xl font-bold text-slate-800 mb-2 text-center">Carregando Segurança...</h2>
+                <p id="master-key-desc" class="text-slate-600 mb-6 text-center text-sm">Aguarde enquanto verificamos suas chaves.</p>
                 <div class="flex gap-2">
-                    <input type="password" id="master-password" placeholder="Sua senha secreta" class="flex-1 p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
-                    <button id="apply-key" class="bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition shadow-md font-bold">Destravar</button>
+                    <input type="password" id="master-password" disabled placeholder="Sua senha secreta" class="flex-1 p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 disabled:opacity-50">
+                    <button id="apply-key" disabled class="bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition shadow-md font-bold disabled:opacity-50">Aguarde</button>
                 </div>
             </div>
         </div>
@@ -69,10 +67,9 @@
         <div id="main-content" class="hidden transition-opacity duration-300 opacity-0">
             
             <!-- ========================================== -->
-            <!-- DASHBOARD VIEW (Visível por padrão após senha) -->
+            <!-- DASHBOARD VIEW -->
             <!-- ========================================== -->
             <div id="dashboard-view" class="space-y-8">
-                <!-- Header do Dashboard com botão Registrar -->
                 <div class="flex justify-between items-center">
                     <h2 class="text-2xl font-bold text-slate-700">Visão Geral</h2>
                     <button id="btn-new-entry" class="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-indigo-700 transition shadow-md flex items-center gap-2">
@@ -81,7 +78,7 @@
                     </button>
                 </div>
 
-                <!-- Heatmap Estilo GitHub (Tamanho Maior) -->
+                <!-- Heatmap Estilo GitHub (365 Dias) -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h3 class="text-lg font-bold text-slate-700 mb-4">MooDMap (Últimos 365 dias)</h3>
                 <div id="heatmap" class="flex flex-wrap gap-1 md:gap-1.5">
@@ -114,9 +111,8 @@
                 </div>
             </div>
 
-
             <!-- ========================================== -->
-            <!-- FORM VIEW (Oculto por padrão)                -->
+            <!-- FORM VIEW -->
             <!-- ========================================== -->
             <div id="form-view" class="hidden bg-white p-6 sm:p-8 rounded-xl shadow-md border border-slate-200 relative">
                 
@@ -235,7 +231,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, getDocs, query, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        // IMPORTANTE: Adicionado getDoc na importação
+        import { getFirestore, collection, doc, setDoc, getDocs, getDoc, query, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -258,6 +255,10 @@
         let currentUser = null;
         let entriesData = []; 
 
+        // VARIÁVEIS DE VALIDAÇÃO ZERO-KNOWLEDGE
+        let validationHash = null; 
+        const VALIDATION_TOKEN = "MooD_Secure_Auth_Valid_100%";
+
         // VIEWS & MODALS
         const loginScreen = document.getElementById('login-screen');
         const appScreen = document.getElementById('app-screen');
@@ -266,6 +267,8 @@
         const mainContent = document.getElementById('main-content');
         const masterKeyModal = document.getElementById('master-key-modal');
         const dataActions = document.getElementById('data-actions');
+        const masterKeyTitle = document.getElementById('master-key-title');
+        const masterKeyDesc = document.getElementById('master-key-desc');
 
         // BOTOES GERAIS
         const btnLogin = document.getElementById('btn-login');
@@ -331,17 +334,47 @@
 
         btnLogout.addEventListener('click', async () => await signOut(auth));
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
                 loginScreen.classList.add('hidden');
                 appScreen.classList.remove('hidden');
                 userInfoDisplay.textContent = `Conectado como ${user.email}`;
                 
-                // Se não há chave, exibe o modal escuro bloqueando as funções
                 if (!encryptionKey) {
                     masterKeyModal.classList.remove('hidden');
                     dataActions.classList.add('hidden');
+                    
+                    // Bloqueia input enquanto verifica banco de dados
+                    passwordInput.disabled = true;
+                    btnApplyKey.disabled = true;
+                    masterKeyTitle.textContent = "Verificando chaves...";
+                    masterKeyDesc.textContent = "Aguarde a resposta do servidor.";
+
+                    try {
+                        const configRef = doc(db, `users/${user.uid}/config/crypto`);
+                        const configSnap = await getDoc(configRef);
+                        
+                        if (configSnap.exists() && configSnap.data().validationHash) {
+                            validationHash = configSnap.data().validationHash;
+                            masterKeyTitle.textContent = "Destravar MooD";
+                            masterKeyDesc.textContent = "Insira sua chave mestre. Sem ela, os seus dados não podem ser lidos.";
+                            btnApplyKey.textContent = "Destravar";
+                        } else {
+                            validationHash = null;
+                            masterKeyTitle.textContent = "Criar Chave Mestre";
+                            masterKeyDesc.textContent = "Crie uma senha forte para criptografar seus dados. ATENÇÃO: Se perdê-la, seus dados nunca mais poderão ser lidos.";
+                            btnApplyKey.textContent = "Criar e Salvar";
+                        }
+                    } catch (error) {
+                        masterKeyDesc.textContent = "Erro de conexão ao verificar chaves.";
+                    }
+
+                    // Libera para digitação
+                    passwordInput.disabled = false;
+                    btnApplyKey.disabled = false;
+                    passwordInput.focus();
+
                 } else {
                     masterKeyModal.classList.add('hidden');
                     dataActions.classList.remove('hidden');
@@ -359,6 +392,7 @@
                 
                 passwordInput.value = '';
                 encryptionKey = '';
+                validationHash = null;
 
                 hideForm();
                 entriesData = [];
@@ -367,10 +401,39 @@
             }
         });
 
-        // ---- CRYPTO ----
-        btnApplyKey.addEventListener('click', () => {
-            if (passwordInput.value.length < 4) return alert('Senha muito fraca.');
-            encryptionKey = passwordInput.value;
+        // ---- CRYPTO: ZERO KNOWLEDGE VERIFICATION ----
+        btnApplyKey.addEventListener('click', async () => {
+            const pwd = passwordInput.value;
+            if (pwd.length < 4) return alert('A senha deve ter pelo menos 4 caracteres.');
+
+            if (validationHash) {
+                // MODO VERIFICAÇÃO: Tenta descriptografar o hash salvo
+                try {
+                    const bytes = CryptoJS.AES.decrypt(validationHash, pwd);
+                    const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
+                    
+                    if (decryptedStr !== VALIDATION_TOKEN) {
+                        return alert("Senha incorreta! Tente novamente.");
+                    }
+                } catch (e) {
+                    return alert("Senha incorreta! Tente novamente.");
+                }
+            } else {
+                // MODO CRIAÇÃO: Primeiro acesso, criptografa a string padrão e salva no banco
+                if (!confirm("⚠️ ATENÇÃO: Se você esquecer essa senha, seus dados serão perdidos permanentemente. Ninguém, nem o Google, poderá recuperá-los. Deseja definir esta senha?")) return;
+                
+                const newHash = CryptoJS.AES.encrypt(VALIDATION_TOKEN, pwd).toString();
+                try {
+                    await setDoc(doc(db, `users/${currentUser.uid}/config/crypto`), { validationHash: newHash });
+                    validationHash = newHash;
+                } catch (e) {
+                    return alert("Erro ao salvar configuração de segurança no banco de dados.");
+                }
+            }
+
+            // Se a senha foi validada com sucesso
+            encryptionKey = pwd;
+            passwordInput.value = '';
             
             // Oculta o modal de senha e revela os botões de ação e painel
             masterKeyModal.classList.add('hidden');
@@ -380,12 +443,12 @@
             mainContent.classList.remove('hidden');
             setTimeout(() => mainContent.classList.remove('opacity-0'), 50);
 
-            if(currentUser) loadData();
+            loadData();
         });
 
         // Permite aplicar a chave com Enter
         passwordInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') btnApplyKey.click();
+            if (e.key === 'Enter' && !btnApplyKey.disabled) btnApplyKey.click();
         });
 
         function encryptData(dataStr) { return CryptoJS.AES.encrypt(dataStr, encryptionKey).toString(); }
@@ -531,18 +594,15 @@
                 const square = document.createElement('div');
                 const brDate = dateStr.split('-').reverse().join('/');
                 
-                // Tamanho aumentado do quadrado
                 square.className = `w-3 h-3 sm:w-4 sm:h-4 rounded-sm ${colorClass} hover:ring-2 ring-offset-1 ring-indigo-400 cursor-pointer transition-all`;
                 square.title = entry ? `${brDate}: ${dayEntries.length} registro(s)` : `${brDate}: Sem registro`;
                 
                 square.addEventListener('click', () => {
-                    // Ao clicar num dia em branco, abre form de novo registro praquele dia
                     if(dayEntries.length === 0) {
                         resetForm();
                         dateInput.value = dateStr;
                         showForm();
                     } else {
-                        // Se tem registros, filtra o histórico pra facilitar a leitura/edição
                         renderHistoryList(dayEntries);
                         btnShowAll.classList.remove('hidden');
                         window.scrollTo({ top: document.getElementById('history-list').offsetTop, behavior: 'smooth' });
@@ -608,7 +668,6 @@
             }
 
             const filteredData = entriesData.filter(entry => {
-                // Monta uma string gigante com todo o conteúdo do dia para a busca bater
                 const searchableString = `
                     ${entry.date.split('-').reverse().join('/')} 
                     ${entry.title || ''} 
@@ -621,22 +680,19 @@
             });
 
             renderHistoryList(filteredData);
-            btnShowAll.classList.remove('hidden'); // Exibe o botão de resetar lista
+            btnShowAll.classList.remove('hidden'); 
         });
 
-        // Modifique também o evento do btnShowAll para limpar a busca:
         btnShowAll.addEventListener('click', () => {
             btnShowAll.classList.add('hidden');
-            searchInput.value = ''; // Limpa o texto
+            searchInput.value = ''; 
             renderHistoryList(entriesData);
         });
 
         // ---- EXPORTAR / IMPORTAR BACKUP CRIPTOGRAFADO ----
-        // EXPORTAR
         btnExport.addEventListener('click', async () => {
             if (!currentUser) return alert("Faça login primeiro.");
             try {
-                // Puxa o dado bruto (criptografado) direto do banco
                 const q = query(collection(db, `users/${currentUser.uid}/entries`));
                 const snap = await getDocs(q);
                 const backup = [];
@@ -644,7 +700,6 @@
 
                 if (backup.length === 0) return alert("Nenhum dado para exportar.");
 
-                // Cria o arquivo JSON e aciona o download
                 const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -657,7 +712,6 @@
             }
         });
 
-        // IMPORTAR
         btnImportTrigger.addEventListener('click', () => {
             if (!currentUser) return alert("Faça login primeiro.");
             fileImport.click();
@@ -677,7 +731,6 @@
 
                     let importedCount = 0;
                     for (const item of backup) {
-                        // Verifica se a estrutura bate com o banco de dados
                         if (item.id && item.payload && item.dateObj) {
                             await setDoc(doc(db, `users/${currentUser.uid}/entries`, item.id), {
                                 payload: item.payload,
@@ -688,18 +741,19 @@
                     }
                     alert(`${importedCount} registros importados com sucesso!`);
                     
-                    // Recarrega a tela usando a chave mestre atual para exibir os novos dados
                     if (encryptionKey) loadData(); 
                     
                 } catch (err) {
                     alert("Erro ao ler o arquivo: " + err.message);
                 } finally {
-                    fileImport.value = ''; // Limpa o input para permitir selecionar o mesmo arquivo de novo se precisar
+                    fileImport.value = ''; 
                 }
             };
             reader.readAsText(file);
         });
 
     </script>
+    <!-- CONTAINER DE NOTIFICAÇÕES (TOASTS) -->
+    <div id="toast-container" class="fixed top-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none"></div>
 </body>
 </html>
